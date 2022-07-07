@@ -42,3 +42,16 @@ jobs:
         run: docker build -t ${{ secrets.DOCKER_REPO }}:latest .
       - name: Publish Docker image
         run: docker push ${{ secrets.DOCKER_REPO }}
+
+  test-docker-image:
+    name: Test docker image with curl
+    runs-on: ubuntu-latest
+    needs: [build-docker-image]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run docker image
+        run: docker run -d --name products-service-example -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
+      - name: Build Container image
+        run: curl http://localhost:8080/123
+     
