@@ -30,6 +30,7 @@ jobs:
   build-docker-image:
     name: Publish to Docker Hub
     runs-on: ubuntu-latest
+    needs: [build_and_test]
     
 
     steps:
@@ -42,7 +43,7 @@ jobs:
         run: docker push ${{ secrets.DOCKER_REPO }}
 
   test-docker-image:
-    name: Test docker image with curl
+    name: Test docker image 
     runs-on: ubuntu-latest
     needs: [build-docker-image]
 
