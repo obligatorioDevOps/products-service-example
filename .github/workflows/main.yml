@@ -36,7 +36,7 @@ jobs:
           with:
             java-version: 8
         - run: mvn -B package --file pom.xml -DskipTests
-        - run: mkdir staging && cp target//home/runner/work/products-service-example/products-service-example/target/products-service-example-0.0.1-SNAPSHOT-spring-boot.jar staging
+        - run: mkdir staging && cp target/*.jar staging
         - uses: actions/upload-artifact@v1
           with:
             name: Package
