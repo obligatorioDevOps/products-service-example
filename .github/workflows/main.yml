@@ -31,5 +31,5 @@ jobs:
       - name: Run docker image
         run: docker run -d --name products-service-example --env "APP_ARGS=http://127.0.0.1:8080 http://127.0.0.1:8080 http://127.0.0.1:8080" -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
       - name: Build Container image
-        run: curl http://localhost:8080/123
+        run: curl http://127.0.0.1:8080/123
      
