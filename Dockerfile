@@ -7,7 +7,7 @@ RUN mvn -B package --file pom.xml -DskipTests
 
 
 FROM openjdk:8-jdk-alpine
-COPY --from=build /workspace/target/*jar-with-dependencies.jar app.jar
+COPY --from=build /workspace/target/*.jar app.jar
 EXPOSE 8080
 CMD java -jar /app.jar 
 
