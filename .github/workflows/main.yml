@@ -1,94 +1,105 @@
 name: Maven CI/CD
 
-on:
+on:    
+  pull_request:
+    branches: [ main, develop, staging ]
   push:
     branches: [ main ]
-  
+
+env:
+    ENDPOINT: products
+    
 jobs:
-  Sonarcloud:
-    name: Scan Sonarcloud
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=obligatoriodevops  -Dsonar.projectKey=obligatorioDevOps_products-service-example
+    Sonarcloud:
+        name: Scan Sonarcloud
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v3
+            with:
+              fetch-depth: 0  
+          - name: Set up JDK 11
+            uses: actions/setup-java@v1
+            with:
+              java-version: 11
+          - name: Cache SonarCloud packages
+            uses: actions/cache@v1
+            with:
+              path: ~/.sonar/cache
+              key: ${{ runner.os }}-sonar
+              restore-keys: ${{ runner.os }}-sonar
+          - name: Cache Maven packages
+            uses: actions/cache@v1
+            with:
+              path: ~/.m2
+              key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+              restore-keys: ${{ runner.os }}-m2
+          - name: Build and analyze
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            run: mvn verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=obligatoriodevops -Dsonar.projectKey=obligatorioDevOps_${{ github.event.repository.name }}
 
+    build_and_test:
+        name: Build and Test
+        runs-on: ubuntu-latest
+        needs: [ Sonarcloud ]
+                   
+        steps:
+        - uses: actions/checkout@v2
+        - name: Set up JDK 8
+          uses: actions/setup-java@v1
+          with:
+            java-version: 8
 
-    
-  build_and_test:
-    runs-on: ubuntu-latest
+        - name: Cache the Maven packages to speed up build
+          uses: actions/cache@v1
+          with:
+            path: ~/.m2
+            key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+            restore-keys: ${{ runner.os }}-m2      
 
+        - name: Build and test project with Maven
+          run: mvn -B package --file pom.xml
+          
+        - name: Login a Docker Hub  
+          uses: docker/login-action@v1
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+        
+        - name: Build and push a Docker Hub de ${{ github.event.repository.name }}
+          uses: docker/build-push-action@v3
+          with:
+            context: .
+            push: true
+            tags: ${{ secrets.DOCKER_REPO }}:latest
+
+    run-docker-image:
+        name: Run docker image
+        runs-on: ubuntu-latest
+        needs: [ build_and_test ]
                
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 8
-      uses: actions/setup-java@v1
-      with:
-        java-version: 8
+        steps:
+            - uses: actions/checkout@v2
+            - name: Run docker image
+              run: | 
+                docker run -d --name ${{ github.event.repository.name }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
+                sleep 30
+	
+    test-docker-image:
+        name: Test docker image 
+        runs-on: ubuntu-latest
+        needs: [ run-docker-image ]
 
-    - name: Cache the Maven packages to speed up build
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2      
-
-    - name: Build and test project with Maven
-      run: mvn -B package --file pom.xml
-    - name: Login a Docker Hub  
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-    
-    - name: Build and push a Docker Hub de products-service-example
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        push: true
-        tags: ${{ secrets.DOCKER_REPO }}:latest
-
-  test-docker-image:
-    name: Test docker image 
-    runs-on: ubuntu-latest
-    needs: [build_and_test, Sonarcloud]
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run docker image and test
-        run: |
-          docker run -d --name payment-service-example  -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
-          sleep 30
-          curl -s -X GET "http://127.0.0.1:8080/products/123" 
-      - name: HTTP status test
-        uses: gerdemann/http-status-code@1.0.0
-        with:
-          url: http://127.0.0.1:8080/products/123
-          code: 200 
-          timeout: 60 
-          interval: 10
-      
-
-     
-
+        steps:
+            - uses: actions/checkout@v2
+            - name: Test docker image
+              run: curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
+            
+            - name: HTTP status test
+              uses: gerdemann/http-status-code@1.0.0
+              with:
+                url: http://127.0.0.1:8080/${{ env.ENDPOINT }}/123
+                code: 200 
+                timeout: 60 
+                interval: 10
