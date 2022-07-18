@@ -85,7 +85,7 @@ jobs:
               run: | 
                 docker run -d --name ${{ github.event.repository.name }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
                 sleep 30
-	
+		
     test-docker-image:
         name: Test docker image 
         runs-on: ubuntu-latest
