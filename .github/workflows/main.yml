@@ -8,6 +8,7 @@ on:
 
 env:
     ENDPOINT: products
+    REPOSITORY_NAME: ${{ github.event.repository.name }}
     
 jobs:
     Sonarcloud:
@@ -37,7 +38,7 @@ jobs:
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
               SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-            run: mvn verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=obligatoriodevops -Dsonar.projectKey=obligatorioDevOps_${{ github.event.repository.name }}
+            run: mvn verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=obligatoriodevops -Dsonar.projectKey=obligatorioDevOps_${{ env.REPOSITORY_NAME }}
 
     build_and_test:
         name: Build and Test
@@ -67,7 +68,7 @@ jobs:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
         
-        - name: Build and push a Docker Hub de ${{ github.event.repository.name }}
+        - name: Build and push a Docker Hub de ${{ env.REPOSITORY_NAME }}
           uses: docker/build-push-action@v3
           with:
             context: .
@@ -82,7 +83,7 @@ jobs:
             - uses: actions/checkout@v2
             - name: Run and test docker image
               run: | 
-                docker run -d --name ${{ github.event.repository.name }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
+                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
                 sleep 30
                 curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
             - name: HTTP status test
