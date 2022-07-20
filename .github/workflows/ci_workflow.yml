@@ -93,17 +93,20 @@ jobs:
                 timeout: 60 
                 interval: 10
     automatic-merge:
+      name: Merge to staging
       runs-on: ubuntu-latest
       needs: [ test-docker-image ]
       
       steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Automatic Merge
-        uses: bambamboole/gha-upmerge@main
+        uses: actions/checkout@v2                
+
+      - name: development -> staging
+        uses: devmasx/merge-branch@master
         with:
-          from_branch: 'develop'
-          to_branch: 'staging'
-          user_name: 'CI Merge Action'
+          type: now
+          from_branch: develop
+          target_branch: staging
+          github_token: ${{ env.GITHUB_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
