@@ -76,7 +76,7 @@ jobs:
             tags: ${{ secrets.DOCKER_REPO }}:latest
             
         - name: Run and test docker image
-              run: | 
+          run: | 
                 docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
                 sleep 30
                 curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
@@ -92,7 +92,7 @@ jobs:
     automatic-merge:
       name: Merge to staging
       runs-on: ubuntu-latest
-      needs: [ test-docker-image ]
+      needs: [ build_and_test ]
       
       steps:
       - name: Checkout
