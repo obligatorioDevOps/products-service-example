@@ -106,4 +106,4 @@ jobs:
           to_branch: 'staging'
           user_name: 'CI Merge Action'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
