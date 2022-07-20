@@ -100,7 +100,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Automatic Merge
-        uses: bambamboole/gha-upmerge@master
+        uses: bambamboole/gha-upmerge@main
         with:
           from_branch: 'develop'
           to_branch: 'staging'
