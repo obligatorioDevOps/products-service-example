@@ -1,7 +1,9 @@
 name: CI workflow
 
 on:    
-  push:
+  pull_request:
+    types:
+      - opened
     branches: [ develop ]
 
 env:
@@ -72,26 +74,21 @@ jobs:
             context: .
             push: true
             tags: ${{ secrets.DOCKER_REPO }}:latest
-
-    test-docker-image:
-        name: Test docker image 
-        runs-on: ubuntu-latest
-        needs: [ build_and_test ]
-               
-        steps:
-            - uses: actions/checkout@v2
-            - name: Run and test docker image
+            
+        - name: Run and test docker image
               run: | 
                 docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
                 sleep 30
                 curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
-            - name: HTTP status test
-              uses: gerdemann/http-status-code@1.0.0
-              with:
-                url: http://127.0.0.1:8080/${{ env.ENDPOINT }}/123
-                code: 200 
-                timeout: 60 
-                interval: 10
+                
+        - name: HTTP status test
+          uses: gerdemann/http-status-code@1.0.0
+          with:
+            url: http://127.0.0.1:8080/${{ env.ENDPOINT }}/123
+            code: 200 
+            timeout: 60 
+            interval: 10
+
     automatic-merge:
       name: Merge to staging
       runs-on: ubuntu-latest
