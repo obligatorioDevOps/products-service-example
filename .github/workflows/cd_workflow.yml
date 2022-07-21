@@ -1,7 +1,18 @@
 name: CD workflow
 
 on:    
-  workflow_call:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+    branches: [ staging ]
+  pull_request_review:
+    types:
+      - submitted
+    branches: [ staging ]
 
 env:
     ENDPOINT: products
@@ -51,12 +62,18 @@ jobs:
             run: | 
                 docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
                 sleep 30
-                curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"                     
-              
+                curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"            
+                
+    deploy:
+      name: Trigger staging CD      
+      uses: obligatorioDevOps/k8s/.github/workflows/main.yml@main
+      needs: [ ci-tests ]      
+      secrets: inherit
+      
     cd-tests:
         name: Staging tests
         runs-on: ubuntu-latest
-        needs: [ ci-tests ]
+        needs: [ deploy ]
                    
         steps:                          
           - name: Checkout
@@ -69,36 +86,11 @@ jobs:
             if: success()
             with:
               collection: ./files/postman_collection.json
-
-
-    automatic-merge:
-      name: Automatic merge develop to staging
-      runs-on: ubuntu-latest
-      needs: [ cd-tests ]
-      
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v2                
-                    
-        - name: Create automatic pull request
-          uses: LucasRuy/sync-branch-action@v1.1.0
-          with:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            SOURCE_BRANCH: 'develop'
-            DESTINATION_BRANCH: 'staging'
-            PULL_REQUEST_TITLE: 'Staging changes from develop branch'
-            PULL_REQUEST_BODY: 'This is an automatic pull request'
-            
-        - name: develop -> staging
-          uses: "pascalgn/automerge-action@v0.15.3"          
-          env:
-            MERGE_LABELS: ""
-            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
             
     post-tests:
       name: Post test actions
       runs-on: ubuntu-latest
-      needs: [ automatic-merge ]
+      needs: [ cd-tests  ]
       
       steps:
         - uses: actions/checkout@v2
