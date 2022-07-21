@@ -81,11 +81,11 @@ jobs:
           with:
             context: .
             push: true
-            tags: ${{ secrets.DOCKER_REPO }}:dev
+            tags: ${{ secrets.DOCKER_REPO }}:latest
             
         - name: Run and test docker image
           run: | 
-                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:dev
+                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
                 sleep 30
                 curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
                 
