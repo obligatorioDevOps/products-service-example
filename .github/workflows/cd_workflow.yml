@@ -66,17 +66,24 @@ jobs:
 
 
     automatic-merge:
-      name: Automatic merge to staging
+      name: Automatic merge develop to staging
       runs-on: ubuntu-latest
       needs: [ cd-tests ]
       
       steps:
+        - name: Checkout
+          uses: actions/checkout@v2                
+        
         - name: develop -> staging
-          uses: "pascalgn/automerge-action@v0.15.3"          
+          uses: devmasx/merge-branch@master
+          with:
+            type: now
+            from_branch: develop
+            target_branch: staging
+            github_token: ${{ env.GITHUB_TOKEN }}
           env:
-            MERGE_LABELS: ""
-            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            
     post-tests:
       name: Post test actions
       runs-on: ubuntu-latest
