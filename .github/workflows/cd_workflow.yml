@@ -46,13 +46,12 @@ jobs:
             with:
               username: ${{ secrets.DOCKER_USERNAME }}
               password: ${{ secrets.DOCKER_PASSWORD }}
-        
-          - name: Build and push a Docker Hub de ${{ env.REPOSITORY_NAME }}
-            uses: docker/build-push-action@v3
-            with:
-              context: .
-              push: true
-              tags: ${{ secrets.DOCKER_REPO }}:latest                             
+              
+          - name: Run and test docker image
+            run: | 
+                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
+                sleep 30
+                curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"                     
               
     cd-tests:
         name: Staging tests
@@ -89,6 +88,12 @@ jobs:
             DESTINATION_BRANCH: 'staging'
             PULL_REQUEST_TITLE: 'Staging changes from develop branch'
             PULL_REQUEST_BODY: 'This is an automatic pull request'
+            
+        - name: develop -> staging
+          uses: "pascalgn/automerge-action@v0.15.3"          
+          env:
+            MERGE_LABELS: ""
+            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
             
     post-tests:
       name: Post test actions
