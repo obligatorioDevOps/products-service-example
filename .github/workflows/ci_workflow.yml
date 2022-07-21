@@ -119,7 +119,7 @@ jobs:
               ${{ github.actor }} / [ ${{ github.repository }} ]
               📢 Pull request automatically merged 📢
 
-    merge-to-staging:
+    pr-to-staging:
       name: Merge to staging
       runs-on: ubuntu-latest
       needs: [ automatic-merge ]
@@ -128,12 +128,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2                
 
-      - name: development -> staging
-        uses: devmasx/merge-branch@master
-        with:
-          type: now
-          from_branch: develop
-          target_branch: staging
-          github_token: ${{ env.GITHUB_TOKEN }}
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:          
+          base: staging
+          branch: develop
+          title: Automatic Develop to Staging merge
