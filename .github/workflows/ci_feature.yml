@@ -128,3 +128,8 @@ jobs:
               ${{ github.actor }} / [ ${{ github.repository }} ]
               📢 Pull request automatically merged into develop branch 📢
     
+    trigger-staging:
+      name: Trigger staging CD
+      uses: ./.github/workflows/cd_workflow.yml
+      needs: [ automatic-merge ]      
+      secrets: inherit
