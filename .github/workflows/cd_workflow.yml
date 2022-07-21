@@ -58,6 +58,13 @@ jobs:
               username: ${{ secrets.DOCKER_USERNAME }}
               password: ${{ secrets.DOCKER_PASSWORD }}
               
+          - name: Build and push a Docker Hub de ${{ env.REPOSITORY_NAME }} / Staging
+            uses: docker/build-push-action@v3
+            with:
+              context: .
+              push: true              
+              tags: ${{ secrets.DOCKER_REPO }}:latest
+              
           - name: Run and test docker image
             run: | 
                 docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
@@ -65,9 +72,9 @@ jobs:
                 curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"            
                 
     deploy:
-      name: Trigger staging CD      
+      name: Deploy staging image to EKS      
       uses: obligatorioDevOps/k8s/.github/workflows/main.yml@main
-      needs: [ ci-tests ]      
+      needs: [ ci-tests ]            
       secrets:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -89,9 +96,9 @@ jobs:
           - uses: matt-ball/newman-action@master
             if: success()
             with:
-              collection: ./files/postman_collection.json
-            
-    post-tests:
+              collection: ./files/postman_collection.json              
+              
+    post-tests:      
       name: Post test actions
       runs-on: ubuntu-latest
       needs: [ cd-tests  ]
