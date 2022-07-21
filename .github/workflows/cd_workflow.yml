@@ -73,16 +73,15 @@ jobs:
       steps:
         - name: Checkout
           uses: actions/checkout@v2                
-        
-        - name: develop -> staging
-          uses: devmasx/merge-branch@master
+                    
+        - name: Create automatic pull request
+          uses: LucasRuy/sync-branch-action@v1.1.0
           with:
-            type: now
-            from_branch: develop
-            target_branch: staging
-            github_token: ${{ env.GITHUB_TOKEN }}
-          env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SOURCE_BRANCH: 'develop'
+            DESTINATION_BRANCH: 'staging'
+            PULL_REQUEST_TITLE: 'Staging changes from develop branch'
+            PULL_REQUEST_BODY: 'This is an automatic pull request'
             
     post-tests:
       name: Post test actions
@@ -102,7 +101,7 @@ jobs:
             
         - name: "Success - Trigger Telegram alert"
           uses: appleboy/telegram-action@master
-          if: success()
+          if: success() && ${{ steps.cpr.outputs.pull-request-number }}
           with:
             to: ${{ secrets.TELEGRAM_CHANNEL_ID }}
             token: ${{ secrets.TELEGRAM_TOKEN }}
