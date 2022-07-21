@@ -1,17 +1,20 @@
 name: CD workflow
 
 on:    
-  push:
+  pull_request:
+    types:
+      - opened
     branches: [ staging ]
 
 env:
     ENDPOINT: products
     REPOSITORY_NAME: ${{ github.event.repository.name }}
     
-jobs:
+jobs:               
     ci-tests:
         name: Scan Sonarcloud
         runs-on: ubuntu-latest
+        
         steps:
           - uses: actions/checkout@v3
             with:
@@ -63,7 +66,18 @@ jobs:
           - name: Staging tests
             id: cd_test_1
             run: echo newman
-            
+  
+    automatic-merge:
+      name: Automatic merge to staging
+      runs-on: ubuntu-latest
+      
+      steps:
+        - name: develop -> staging
+          uses: "pascalgn/automerge-action@v0.15.3"          
+          env:
+            MERGE_LABELS: ""
+            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
     post-tests:
       name: Post test actions
       runs-on: ubuntu-latest
@@ -78,7 +92,7 @@ jobs:
           uses: peter-evans/create-pull-request@v4          
           with:
             base: main
-            branch: ${{ github.ref }}                   
+            branch: staging            
             
         - name: "Success - Trigger Telegram alert"
           uses: appleboy/telegram-action@master
