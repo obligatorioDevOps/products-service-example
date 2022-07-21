@@ -117,26 +117,5 @@ jobs:
             token: ${{ secrets.TELEGRAM_TOKEN }}
             message: |
               ${{ github.actor }} / [ ${{ github.repository }} ]
-              📢 Pull request automatically merged 📢
-              
-        - name: Create Pull Request
-          id: cpr
-          uses: peter-evans/create-pull-request@v4
-          with:
-            token: ${{ secrets.GITHUB_TOKEN }}
-            base: staging            
-            title: 'Staging changes from develop branch'
-            
-        - name: develop -> staging
-          uses: "pascalgn/automerge-action@v0.15.3"          
-          env:
-            MERGE_LABELS: ""
-            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"    
-            PULL_REQUEST: ${{ steps.cpr.outputs.pull-request-number }}
-
-    trigger-staging:
-      name: Trigger staging
-      uses: ./.github/workflows/cd_workflow.yml
-      needs: [ automatic-merge ]      
-      secrets: inherit
+              📢 Pull request automatically merged into develop branch 📢
     
