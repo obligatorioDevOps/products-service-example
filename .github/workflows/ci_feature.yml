@@ -113,7 +113,7 @@ jobs:
           uses: repo-sync/github-sync@v2
           if: success()
           with:
-            source_repo: obligatorioDevOps_${{ env.REPOSITORY_NAME }}
+            source_repo: obligatorioDevOps/${{ env.REPOSITORY_NAME }}
             source_branch: "develop"
             destination_branch: "staging"
             github_token: ${{ secrets.GITHUB_TOKEN }}
