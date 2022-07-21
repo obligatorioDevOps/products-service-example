@@ -4,6 +4,14 @@ on:
   pull_request:
     types:
       - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+    branches: [ develop ]
+  pull_request_review:
+    types:
+      - submitted
     branches: [ develop ]
 
 env:
@@ -128,12 +136,4 @@ jobs:
           target_branch: staging
           github_token: ${{ env.GITHUB_TOKEN }}
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
-            
-    trigger-cd-workflow:
-        name: CD Workflow / Staging
-        needs: [ merge-to-staging ]
-        if: success()
-        uses: obligatorioDevOps/products-service-example/.github/workflows/cd_workflow.yml@main        
-        secrets: inherit
- 
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
