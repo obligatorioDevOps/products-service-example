@@ -81,11 +81,11 @@ jobs:
           with:
             context: .
             push: true
-            tags: ${{ secrets.DOCKER_REPO }}:dev
+            tags: ${{ secrets.DOCKER_REPO }}:lastest
             
         - name: Run and test docker image
           run: | 
-                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:dev
+                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:lastest
                 sleep 30
                 curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
                 
@@ -118,6 +118,21 @@ jobs:
             message: |
               ${{ github.actor }} / [ ${{ github.repository }} ]
               📢 Pull request automatically merged 📢
+              
+        - name: Create Pull Request
+          id: cpr
+          uses: peter-evans/create-pull-request@v4
+          with:
+            token: ${{ secrets.PAT }}       
+            base: staging            
+            title: 'Staging changes from develop branch'
+            
+        - name: develop -> staging
+          uses: "pascalgn/automerge-action@v0.15.3"          
+          env:
+            MERGE_LABELS: ""
+            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"    
+            PULL_REQUEST: ${{ steps.cpr.outputs.pull-request-number }}
 
     trigger-staging:
       name: Trigger staging
