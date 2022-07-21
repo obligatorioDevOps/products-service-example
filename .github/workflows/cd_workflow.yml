@@ -60,9 +60,16 @@ jobs:
         needs: [ ci-tests ]
                    
         steps:                          
-          - name: Staging tests
-            id: cd_test_1
-            run: echo newman
+          - name: Checkout
+            uses: actions/checkout@v2
+            with:
+              repository: 'obligatorioDevOps/obligatorio'
+              ref: 'main'
+          
+          - uses: matt-ball/newman-action@master
+            if: success()
+            with:
+              collection: ./files/postman_collection.json
 
 
     automatic-merge:
