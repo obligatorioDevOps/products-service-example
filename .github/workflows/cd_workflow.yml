@@ -1,10 +1,7 @@
 name: CD workflow
 
 on:    
-  pull_request:
-    types:
-      - opened
-    branches: [ staging ]
+  workflow_call:
 
 env:
     ENDPOINT: products
