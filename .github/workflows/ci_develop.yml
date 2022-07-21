@@ -1,6 +1,7 @@
 on:
   push:
-    develop
+    branches:
+      develop
     
 jobs:
   merge-staging:
