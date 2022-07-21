@@ -108,6 +108,15 @@ jobs:
           env:
             MERGE_LABELS: ""
             GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+            
+        - name: repo-sync
+          uses: repo-sync/github-sync@v2
+          if: success()
+          with:
+            source_repo: obligatorioDevOps_${{ env.REPOSITORY_NAME }}
+            source_branch: "develop"
+            destination_branch: "staging"
+            github_token: ${{ secrets.GITHUB_TOKEN }}
         
         - name: "PR Merged - Trigger Telegram alert"
           uses: appleboy/telegram-action@master
