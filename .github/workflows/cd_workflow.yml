@@ -68,8 +68,12 @@ jobs:
       name: Trigger staging CD      
       uses: obligatorioDevOps/k8s/.github/workflows/main.yml@main
       needs: [ ci-tests ]      
-      secrets: inherit
-      
+      secrets:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+              
     cd-tests:
         name: Staging tests
         runs-on: ubuntu-latest
