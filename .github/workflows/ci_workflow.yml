@@ -131,6 +131,9 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
             
     trigger-cd-workflow:
+        name: CD Workflow / Staging
+        needs: [ merge-to-staging ]
+        if: success()
         uses: obligatorioDevOps/products-service-example/.github/workflows/cd_workflow.yml@main        
         secrets: inherit
  
