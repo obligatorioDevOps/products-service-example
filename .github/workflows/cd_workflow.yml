@@ -1,10 +1,8 @@
-name: CI workflow
+name: CD workflow
 
 on:    
-  pull_request:
-    types:
-      - opened
-    branches: [ develop ]
+  push:   
+    branches: [ staging ]
 
 env:
     ENDPOINT: products
@@ -21,7 +19,7 @@ jobs:
           - name: Set up JDK 11
             uses: actions/setup-java@v1
             with:
-              java-version: 11
+              java-version: 11 
           - name: Cache SonarCloud packages
             uses: actions/cache@v1
             with:
@@ -40,7 +38,7 @@ jobs:
               SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
             run: mvn verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=obligatoriodevops -Dsonar.projectKey=obligatorioDevOps_${{ env.REPOSITORY_NAME }}
 
-    build_and_test:
+    build:
         name: Build and Test
         runs-on: ubuntu-latest
         needs: [ coverage ]
@@ -73,35 +71,39 @@ jobs:
           with:
             context: .
             push: true
-            tags: ${{ secrets.DOCKER_REPO }}:latest
+            tags: ${{ secrets.DOCKER_REPO }}:latest                 
             
-        - name: Run and test docker image
-          run: | 
-                docker run -d --name ${{ env.REPOSITORY_NAME }} -p 8080:8080 ${{ secrets.DOCKER_REPO }}:latest
-                sleep 30
-                curl -s -X GET "http://127.0.0.1:8080/${{ env.ENDPOINT }}/123"
-                
-        - name: HTTP status test
-          uses: gerdemann/http-status-code@1.0.0
-          with:
-            url: http://127.0.0.1:8080/${{ env.ENDPOINT }}/123
-            code: 200 
-            timeout: 60 
-            interval: 10
-    
-    automatic-merge:
-      name: Merge to develop
+    tests:
+        name: Staging tests
+        runs-on: ubuntu-latest
+        needs: [ build ]
+                   
+        steps:              
+          - name: CI tests
+            id: test_1
+            run: echo CI tests again
+            
+          - name: Staging tests
+            id: test_2
+            run: echo newman
+            
+    post-test:
+      name: Post test actions
       runs-on: ubuntu-latest
-      needs: [ build_and_test ]
+      needs: [ tests ]
       
       steps:
-        - name: feature -> develop
-          uses: "pascalgn/automerge-action@v0.15.3"          
-          env:
-            MERGE_LABELS: ""
-            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        - uses: actions/checkout@v2
         
-        - name: "PR Merged - Trigger Telegram alert"
+        - id: cpr
+          name: "Success - Create pull request"
+          if: success()
+          uses: peter-evans/create-pull-request@v4          
+          with:
+            base: main
+            branch: ${{ github.ref }}                   
+            
+        - name: "Success - Trigger Telegram alert"
           uses: appleboy/telegram-action@master
           if: success()
           with:
@@ -109,23 +111,19 @@ jobs:
             token: ${{ secrets.TELEGRAM_TOKEN }}
             message: |
               ${{ github.actor }} / [ ${{ github.repository }} ]
-              📢 Pull request automatically merged 📢
-
-    merge-to-staging:
-      name: Merge to staging
-      runs-on: ubuntu-latest
-      needs: [ automatic-merge ]
-      
-      steps:
-      - name: Checkout
-        uses: actions/checkout@v2                
-
-      - name: development -> staging
-        uses: devmasx/merge-branch@master
-        with:
-          type: now
-          from_branch: develop
-          target_branch: staging
-          github_token: ${{ env.GITHUB_TOKEN }}
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              ✅ CD Pipeline succeed ✅
+              
+              Please, check PR at ${{ steps.cpr.outputs.pull-request-url }} to continue the workflow
+              
+        - name: "Failed - Trigger Telegram alert"
+          uses: appleboy/telegram-action@master
+          if: failure() || cancelled()
+          with:
+            to: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+            token: ${{ secrets.TELEGRAM_TOKEN }}
+            message: |
+              ${{ github.actor }} / [ ${{ github.repository }} ]
+              ❌ CD Pipeline failed ❌
+              
+              Please, check output at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              Please, check output at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
