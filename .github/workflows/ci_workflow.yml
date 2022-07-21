@@ -128,4 +128,14 @@ jobs:
           target_branch: staging
           github_token: ${{ env.GITHUB_TOKEN }}
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
+            
+    trigger-cd-workflow:      
+        name: Deploy / Staging
+        runs-on: ubuntu-latest
+        needs: [ merge-to-staging ]            
+        steps:
+          - uses: .github/workflows/cd_workflow.yml@main
+            with:
+              secrets: inherit
+ 
